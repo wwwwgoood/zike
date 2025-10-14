@@ -143,9 +143,6 @@
 
         extractPixels()//统计像素部分
 
-        SetBackground(color);
-
-
         const PauseButton = document.querySelector('.play-pause');
         PauseButton.addEventListener('click', SwitchPlay);//
 
@@ -268,9 +265,6 @@
             }
         }
     }
-    function SetBackgroundColor(color) {//设置背景
-        bg.style.backgroundColor = color
-    }
 
     function SetCover(songs) {//设置封面
         cover_img.src = songs[nowindex].cover;
@@ -377,17 +371,17 @@
             nowindex = 0;
 
         }
+        await LoadSongWordsData();
         console.log(nowindex);
 
+        SetCover(songs);
         extractPixels()
 
-        SetBackground(color);
-        SetCover(songs);
         audio.src = songs[nowindex].url;
         song_name.textContent = songs[nowindex].title;
         soner.textContent = songs[nowindex].artist;
 
-        await LoadSongWordsData();
+        
         InitWords();
 
         play_pause.querySelector('.PauseIcon').setAttribute('name', 'play-outline');
@@ -398,46 +392,75 @@
     }
 
     //统计像素部分
-    function extractPixels() {
+    async function extractPixels() {
         let canvas = document.getElementById('canvas');//利用canvas提取图片像素
 
-        const img = document.querySelector('.cover img');
+        console.log(`提取像素部分的nowindex：${nowindex}`)
 
-        canvas.style.width = img.naturalWidth + 'px';
-        canvas.style.height = img.naturalHeight + 'px';
+        img = document.createElement('img');
+        img.style.display="none";
+        img.crossOrigin = "anonymous"; // 关键：添加跨域标记
+        img.src=songs[nowindex].cover;
 
-        const ctx = canvas.getContext('2d');//获取2d绘图环境
+        const colorCount = {};
 
+        const imgLoaded = new Promise((resolve, reject) => {
+        img.onload = () => {
+            // 图片加载成功，检查尺寸
+            if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                reject('图片尺寸无效');
+                return;
+            }
+            resolve(img); // 成功时返回图片对象
+        };
+        img.onerror = () => reject('图片加载失败'); // 失败时 reject
+    });
+
+    try {
+        // 3. 等待图片加载完成（用 await 等待 Promise）
+        await imgLoaded;
+
+        // 4. 图片加载完成后，执行像素提取和颜色统计
+        const ctx = canvas.getContext('2d');
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
 
-        ctx.filter = 'blur(8px)';//模糊化
+        ctx.filter = 'blur(8px)';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
 
-        const colorCount = {};//存储颜色及其出现次数的对象
+        const colorCount = {};
         for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
             const b = data[i + 2];
             const a = data[i + 3];
-            const similarColors = `${Math.floor(r / 10) * 10},${Math.floor(g / 10) * 10},${Math.floor(b / 10) * 10}`;//类似的颜色归为一类
+            // 忽略透明像素（避免干扰）
+            if (a < 50) continue;
+            const similarColors = `${Math.floor(r / 10) * 10},${Math.floor(g / 10) * 10},${Math.floor(b / 10) * 10}`;
             colorCount[similarColors] = (colorCount[similarColors] || 0) + 1;
         }
 
+        // 5. 统计出现次数最多的颜色
         let max = 0;
-
-        Object.entries(colorCount).forEach(([color, count]) => { // 注意这里的参数顺序是 [color, count]
+        let nowColor = '';
+        Object.entries(colorCount).forEach(([color, count]) => {
             if (count > max) {
                 max = count;
-                nowColor = color; // 此时 color 是键（颜色字符串），count 是值（出现次数）
+                nowColor = color;
+                console.log(`当前颜色：${nowColor}`); // 每次找到新的最大值都会输出
             }
         });
 
-        color = nowcolor
-        SetBackgroundColor(nowColor);
+        // 6. 设置背景色（注意格式为 rgb(...)）
+        bg.style.backgroundColor = `rgb(${nowColor})`;
+
+    } catch (error) {
+        // 处理加载失败或尺寸无效的错误
+        console.error('提取颜色失败：', error);
     }
+}
 
     window.onload = InitPlayer;
 </script>

@@ -32,7 +32,6 @@ body {
     right: -40px;
     bottom: -40px;
     left: -40px;
-    background: no-repeat;
     background-size: cover;
     background-position: center;
     /* 模糊滤镜 */
@@ -46,9 +45,11 @@ body {
 
 .song-words{
     height: 75vh;
-    border: 10px solid rgba(255, 255, 255, 0.3);
     overflow-y: auto;
     scroll-behavior: smooth;
+}
+.song-words::-webkit-scrollbar {
+  display: none; /* 直接隐藏滚动条 */
 }
 
 .line{
@@ -57,7 +58,7 @@ body {
     line-height: 40px;
     text-align: center;
     font-size: 20px;
-    color: #fff;
+    color: #ec8383;
     transition: all 0.3s ease;
     opacity: 0.7;
 }
@@ -92,7 +93,7 @@ body {
     left: 25%;
     top: 1%;
     width: 70%;
-    height: 12vh;
+    height: 11vh;
     background-color: rgba(187, 186, 186, 0.8);
     border-radius: 15px 15px 0 0;
     /* 改变top时的过渡效果 */
@@ -105,7 +106,7 @@ body {
 
 .hover-section.active {
     /* 上移 */
-    top: -90%;
+    top: -85%;
 }
 
 .song-name {
@@ -116,9 +117,8 @@ body {
 }
 
 .soner {
-    color: #888;
+    color: #525252;
     font-size: 13px;
-    margin-top: 1%;
 }
 
 .time {

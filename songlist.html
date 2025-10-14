@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,23 +10,23 @@
 </head>
 
 <body>
-    <div class="main-c">
-        <div class="container">
-            
+    <div class="bg">
+        <div class="main-c">
+            <div class="container">
+
+            </div>
         </div>
     </div>
-
     <script>
         let main_c = document.querySelector('.main-c');
         let container = document.querySelector('.container');
-        let list_container=document.querySelector('.list-container');
+        let list_container = document.querySelector('.list-container');
 
         let lists;
-        let nowindex = 0;
+        let nowsong;
 
         async function InitSongList() {
             await LoadSongListData();
-            ShowLists();
             ShowLists();
         };
 
@@ -45,72 +44,105 @@
         }
 
         function ShowLists() {
-            let newlist = document.createElement('div');//contain->list->listInfo/songs
-            newlist.className = 'list-container';
-            container.appendChild(newlist);
+            let nowindex = 0;
+            while (nowindex < lists.length) {
+                let newlist = document.createElement('div');//contain->list->listInfo/songs
+                newlist.className = 'list-container';
+                newlist.id = nowindex;
+                container.appendChild(newlist);
 
-            let listInfo = document.createElement('div');//contain->list->info->cover/info
-            listInfo.className = 'listInfo';
-            newlist.appendChild(listInfo);
+                let listInfo = document.createElement('div');//contain->list->info->cover/info
+                listInfo.className = 'listInfo';
+                newlist.appendChild(listInfo);
 
 
-            let cover_container = document.createElement('div');
-            cover_container.className = 'cover-container';
-            listInfo.appendChild(cover_container);
+                let cover_container = document.createElement('div');
+                cover_container.className = 'cover-container';
+                listInfo.appendChild(cover_container);
 
-            let songs_container = document.createElement('div');//contain->songs->song
-            songs_container.className = 'songs-container';
-            // song_container.style.display = 'none';//初始状态下隐藏歌曲列表
+                let songs_container = document.createElement('div');//contain->songs->song
+                songs_container.className = 'songs-container';
+                // song_container.style.display = 'none';//初始状态下隐藏歌曲列表
 
-            listInfo.addEventListener('click',() => SwitchSong(newlist,songs_container));//给list添加点击事件，点击后展开歌曲列表
+                listInfo.addEventListener('click', () => SwitchSong(newlist, songs_container));//给list添加点击事件，点击后展开歌曲列表
 
-            let cover_img = document.createElement('img');
-            cover_img.className = 'Listcover';
-            cover_container.appendChild(cover_img);
-            cover_img.src = lists[nowindex].cover;
+                let cover_img = document.createElement('img');
+                cover_img.className = 'Listcover';
+                cover_container.appendChild(cover_img);
+                cover_img.src = lists[nowindex].cover;
 
-            let info = document.createElement('div');//contain->list->listinfo->info->name
-            info.className = 'info';
-            listInfo.appendChild(info);
+                let info = document.createElement('div');//contain->list->listinfo->info->name
+                info.className = 'info';
+                listInfo.appendChild(info);
 
-            let name = document.createElement('div');
-            name.className = 'listname';
-            info.appendChild(name);
-            name.innerText = lists[nowindex].name;
+                let name = document.createElement('div');
+                name.className = 'listname';
+                info.appendChild(name);
+                name.innerText = lists[nowindex].name;
 
-            nowindex++;
+                nowindex++;
 
-            newlist.appendChild(songs_container);
-
+                newlist.appendChild(songs_container);
+            }
         }
 
-        function SwitchSong(list,songs_container)
-        {
-            if(songs_container.classList.contains('active'))
-            {
+        function SwitchSong(list, songs_container) {
+            if (songs_container.classList.contains('active')) {
                 songs_container.classList.remove('active');
                 return;
             }
-            ShowSongs(list);
+            else {
+                songs_container.classList.add('active');
+            }
+            ShowSongs(songs_container, list.id);
         }
 
-        function ShowSongs(list)
-        {
-            let songs_container = list.querySelector('.songs-container');
-            let song_container = document.createElement('div');
-            song_container.className = 'song-container';
-            songs_container.appendChild(song_container);
+        async function ShowSongs(list, nowlistid) {
 
-            let song_cover = document.createElement('div');
-            song_cover.className = 'song-cover';
-            song_container.appendChild(song_cover);
+            if (nowlistid >= lists.length) {
+                nowlistid = 0;
+                return;
+            }
 
-            let song_img = document.createElement('img');
-            song_cover.appendChild(song_img);
-            song_img.src = lists[1].cover;
+            if (list.childElementCount < lists[nowlistid].songIds.length) {
+                for (i = 0; i < lists[nowlistid].songIds.length; i++) {
 
-            songs_container.classList.add('active');
-            // songs_container.style.display = 'block';//显示歌曲列表
+                    let song_container = document.createElement('div');
+                    song_container.className = 'song-container';
+                    list.appendChild(song_container);
+
+                    let song_cover = document.createElement('div');
+                    song_cover.className = 'song-cover';
+                    song_container.appendChild(song_cover);
+
+                    let song_img = document.createElement('img');
+                    song_cover.appendChild(song_img);
+
+                    console.log(`i:${i}`);
+
+                    await GetSong(nowlistid, i);
+
+                    song_img.src = nowsong.cover;
+
+                    list.classList.add('active');
+                    // songs_container.style.display = 'block';//显示歌曲列表
+                }
+            }
+        }
+
+        async function GetSong(listId, i) {
+            console.log(listId);
+            const BaseUrl = "https://aie-2025.scauaie.cn/api";
+            const url = `${BaseUrl}/songs/${lists[listId].songIds[i]}`;
+
+            response = await axios.get(url, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            })
+            console.log(response.data.data);
+            nowsong = response.data.data
+            console.log(nowsong);
         }
 
         window.onload = InitSongList;
