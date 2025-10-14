@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐播放器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+        }
+
+        /* ========== 登录页面样式 ========== */
+        .login-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #6b21a8 0%, #1f1f1f 50%, #000 100%);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container.active {
+            display: flex;
+        }
+
+        .login-card {
+            width: 400px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .brand-icon {
+            width: 64px;
+            height: 64px;
+            background: #a855f7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: #333;
+            border-color: #a855f7;
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        .form-group input::placeholder {
+            color: #666;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login {
+            background: #a855f7;
+            color: #fff;
+        }
+
+        .btn-login:hover {
+            background: #9333ea;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(168, 85, 247, 0.3);
+        }
+
+        .btn-register {
+            background: #3a3a3a;
+            color: #fff;
+        }
+
+        .btn-register:hover {
+            background: #4a4a4a;
+            transform: translateY(-2px);
+        }
+
+        /* ========== 主页面样式 ========== */
+        .main-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            background: #0f0f0f;
+            flex-direction: row;
+        }
+
+        .main-container.active {
+            display: flex;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 260px;
+            background: #1a1a1a;
+            border-right: 1px solid #2a2a2a;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #a855f7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .user-text h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .user-text p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            color: #ccc;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: #2a2a2a;
+        }
+
+        .nav-item.active {
+            background: #a855f7;
+            color: #fff;
+        }
+
+        .logout-btn {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        /* 主内容区 */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0f0f0f;
+        }
+
+        .content-header {
+            padding: 32px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .content-header h2 {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .playlist-section {
+            padding: 32px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .playlist-item {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #2a2a2a;
+        }
+
+        .playlist-item:hover {
+            background: #252525;
+            border-color: #3a3a3a;
+        }
+
+        .playlist-item h3 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .playlist-item p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .create-playlist-btn {
+            width: 100%;
+            padding: 12px;
+            background: #a855f7;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+
+        .create-playlist-btn:hover {
+            background: #9333ea;
+        }
+
+        /* 歌曲列表 */
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .track-item {
+            padding: 12px 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .track-item:hover {
+            background: #252525;
+        }
+
+        .track-item.playing {
+            background: #a855f7;
+        }
+
+        .track-info h4 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .track-info p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .track-duration {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* 播放器栏 */
+        .player-bar {
+            background: #1a1a1a;
+            border-top: 1px solid #2a2a2a;
+            padding: 20px 32px;
+        }
+
+        .progress-bar {
+            margin-bottom: 16px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: #2a2a2a;
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #a855f7;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .current-track {
+            flex: 1;
+        }
+
+        .current-track h4 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .current-track p {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            color: #a855f7;
+        }
+
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            background: #a855f7;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+        }
+
+        .play-btn:hover {
+            background: #9333ea;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0.5;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div class="login-container active" id="loginContainer">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="brand-icon">♫</div>
+                <h1>音乐播放器</h1>
+                <p>享受高质量音乐</p>
+            </div>
+
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="username" placeholder="输入用户名">
+            </div>
+
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="password" placeholder="输入密码">
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-login" onclick="handleLogin('用户')">登录</button>
+                <button class="btn btn-register" onclick="handleLogin('新用户')">注册</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主页面 -->
+    <div class="main-container" id="mainContainer">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-text">
+                    <h3 id="username-display">用户</h3>
+                    <p>高级会员</p>
+                </div>
+            </div>
+
+            <div class="nav-menu">
+                <button class="nav-item active" onclick="switchPage('home')">
+                    🏠 首页
+                </button>
+                <button class="nav-item" onclick="switchPage('playlists')">
+                    📋 我的歌单
+                </button>
+            </div>
+
+            <button class="logout-btn" onclick="handleLogout()">
+                🚪 退出登录
+            </button>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="content-area">
+            <div class="content-header">
+                <h2 id="page-title">推荐曲库</h2>
+            </div>
+
+            <div class="playlist-section" id="playlistSection"></div>
+
+            <div class="player-bar">
+                <div class="progress-bar">
+                    <div class="progress-track" onclick="seekTrack(event)">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="time-display">
+                        <span id="currentTime">0:00</span>
+                        <span id="totalTime">0:00</span>
+                    </div>
+                </div>
+
+                <div class="player-info">
+                    <div class="current-track">
+                        <h4 id="track-title">暂无歌曲</h4>
+                        <p id="track-artist">-</p>
+                    </div>
+
+                    <div class="controls">
+                        <button class="control-btn" onclick="previousTrack()">⏮</button>
+                        <button class="control-btn play-btn" onclick="togglePlay()" id="playBtn">▶</button>
+                        <button class="control-btn" onclick="nextTrack()">⏭</button>
+                    </div>
+
+                    <div class="volume-control">
+                        <span>🔊</span>
+                        <input type="range" class="volume-slider" min="0" max="100" value="70" onchange="setVolume(this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 数据 ==========
+        const mockData = {
+            favorite: {
+                name: '我的最爱',
+                tracks: [
+                    { id: 1, title: '夜空中最亮的星', artist: '逃跑计划', duration: 234 },
+                    { id: 2, title: '光年之外', artist: '邓紫棋', duration: 267 },
+                    { id: 3, title: '起风了', artist: '吴青峰', duration: 228 },
+                ]
+            },
+            recent: {
+                name: '最近播放',
+                tracks: [
+                    { id: 4, title: '告白气球', artist: '周杰伦', duration: 256 },
+                    { id: 5, title: '简单爱', artist: '周杰伦', duration: 242 },
+                ]
+            }
+        };
+
+        const allTracks = [
+            ...mockData.favorite.tracks,
+            { id: 6, title: '青花瓷', artist: '周杰伦', duration: 307 },
+            { id: 7, title: '双手简谱', artist: '周杰伦', duration: 303 },
+            { id: 8, title: '夜曲', artist: '周杰伦', duration: 296 },
+        ];
+
+        // ========== 状态管理 ==========
+        let state = {
+            currentUser: null,
+            currentPage: 'home',
+            isPlaying: false,
+            currentTrackIndex: 0,
+            currentTime: 0,
+            playbackInterval: null
+        };
+
+        // ========== 登录处理 ==========
+        function handleLogin(username) {
+            const inputUsername = document.getElementById('username').value || username;
+            state.currentUser = inputUsername;
+            state.currentPage = 'home';
+            
+            document.getElementById('username-display').textContent = inputUsername;
+            document.getElementById('loginContainer').classList.remove('active');
+            document.getElementById('mainContainer').classList.add('active');
+            
+            renderPage();
+        }
+
+        // ========== 页面切换 ==========
+        function switchPage(page) {
+            state.currentPage = page;
+            
+            // 更新导航按钮状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.nav-item').classList.add('active');
+            
+            // 更新页面标题
+            document.getElementById('page-title').textContent = 
+                page === 'home' ? '推荐曲库' : '我的歌单';
+            
+            renderPage();
+        }
+
+        // ========== 渲染页面内容 ==========
+        function renderPage() {
+            const section = document.getElementById('playlistSection');
+            
+            if (state.currentPage === 'home') {
+                // 显示所有歌曲
+                section.innerHTML = '<div class="track-list" id="trackList"></div>';
+                renderTracks(allTracks);
+            } else if (state.currentPage === 'playlists') {
+                // 显示歌单列表
+                let html = '';
+                for (let key in mockData) {
+                    const playlist = mockData[key];
+                    html += `
+                        <div class="playlist-item">
+                            <h3>${playlist.name}</h3>
+                            <p>${playlist.tracks.length} 首歌曲</p>
+                        </div>
+                    `;
+                }
+                html += '<button class="create-playlist-btn">+ 创建歌单</button>';
+                section.innerHTML = html;
+            }
+        }
+
+        // ========== 渲染歌曲列表 ==========
+        function renderTracks(tracks) {
+            const trackList = document.getElementById('trackList');
+            trackList.innerHTML = '';
+            
+            tracks.forEach((track, index) => {
+                const trackItem = document.createElement('div');
+                trackItem.className = 'track-item';
+                if (index === state.currentTrackIndex) {
+                    trackItem.classList.add('playing');
+                }
+                
+                trackItem.innerHTML = `
+                    <div class="track-info">
+                        <h4>${track.title}</h4>
+                        <p>${track.artist}</p>
+                    </div>
+                    <div class="track-duration">${formatTime(track.duration)}</div>
+                `;
+                
+                trackItem.onclick = () => {
+                    state.currentTrackIndex = index;
+                    state.currentTime = 0;
+                    state.isPlaying = true;
+                    updatePlayer();
+                    startPlayback();
+                };
+                
+                trackList.appendChild(trackItem);
+            });
+        }
+
+        // ========== 播放器控制 ==========
+        function togglePlay() {
+            if (state.currentTrackIndex >= allTracks.length) {
+                state.currentTrackIndex = 0;
+            }
+            state.isPlaying = !state.isPlaying;
+            updatePlayer();
+            state.isPlaying ? startPlayback() : stopPlayback();
+        }
+
+        function nextTrack() {
+            state.currentTrackIndex = (state.currentTrackIndex + 1) % allTracks.length;
+            state.currentTime = 0;
+            state.isPlaying = true;
+            updatePlayer();
+            startPlayback();
+        }
+
+        function previousTrack() {
+            state.currentTrackIndex = (state.currentTrackIndex - 1 + allTracks.length) % allTracks.length;
+            state.currentTime = 0;
+            state.isPlaying = true;
+            updatePlayer();
+            startPlayback();
+        }
+
+        // ========== 播放进度管理 ==========
+        function startPlayback() {
+            if (state.playbackInterval) return;
+            
+            state.playbackInterval = setInterval(() => {
+                const track = allTracks[state.currentTrackIndex];
+                state.currentTime++;
+                
+                if (state.currentTime >= track.duration) {
+                    nextTrack();
+                } else {
+                    updateProgressBar();
+                }
+            }, 1000);
+        }
+
+        function stopPlayback() {
+            if (state.playbackInterval) {
+                clearInterval(state.playbackInterval);
+                state.playbackInterval = null;
+            }
+        }
+
+        // ========== 更新播放器显示 ==========
+        function updatePlayer() {
+            const track = allTracks[state.currentTrackIndex];
+            document.getElementById('track-title').textContent = track.title;
+            document.getElementById('track-artist').textContent = track.artist;
+            document.getElementById('totalTime').textContent = formatTime(track.duration);
+            
+            const playBtn = document.getElementById('playBtn');
+            playBtn.textContent = state.isPlaying ? '⏸' : '▶';
+            
+            // 更新歌曲列表中的高亮
+            document.querySelectorAll('.track-item').forEach((item, index) => {
+                item.classList.remove('playing');
+                if (index === state.currentTrackIndex) {
+                    item.classList.add('playing');
+                }
+            });
+            
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const track = allTracks[state.currentTrackIndex];
+            const percentage = (state.currentTime / track.duration) * 100;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('currentTime').textContent = formatTime(state.currentTime);
+        }
+
+        function seekTrack(event) {
+            const track = allTracks[state.currentTrackIndex];
+            const progressTrack = event.currentTarget;
+            const rect = progressTrack.getBoundingClientRect();
+            const percent = (event.clientX - rect.left) / rect.width;
+            state.currentTime = Math.floor(percent * track.duration);
+            updateProgressBar();
+        }
+
+        // ========== 工具函数 ==========
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function setVolume(value) {
+            console.log('音量设置为: ' + value);
+        }
+
+        function handleLogout() {
+            state.currentUser = null;
+            state.isPlaying = false;
+            stopPlayback();
+            document.getElementById('loginContainer').classList.add('active');
+            document.getElementById('mainContainer').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

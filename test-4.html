@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐曲库</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 250px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .search-btn:hover {
+            background: #764ba2;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .playlist-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+            color: #666;
+            background: #f9f9f9;
+        }
+
+        .playlist-item:hover {
+            background: #f0f0f0;
+        }
+
+        .playlist-item.active {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .songs-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .song-card {
+            flex: 1 1 calc(25% - 15px);
+            min-width: 150px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .song-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .song-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .song-info {
+            padding: 15px;
+        }
+
+        .song-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 15px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .song-artist {
+            color: #999;
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 8px;
+        }
+
+        .song-album {
+            color: #bbb;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .loading {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .error {
+            background: #fadbd8;
+            color: #c0392b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .song-card {
+                flex: 1 1 calc(33.333% - 15px);
+            }
+
+            .content {
+                grid-template-columns: 200px 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: grid;
+                grid-template-columns: auto auto auto;
+                gap: 10px;
+                height: auto;
+            }
+
+            .playlist-item {
+                margin-bottom: 0;
+            }
+
+            .song-card {
+                flex: 1 1 calc(50% - 10px);
+            }
+
+            .songs-grid {
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .song-card {
+                flex: 1 1 100%;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            .sidebar {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 音乐曲库</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索歌曲...">
+                <button class="search-btn" onclick="search()">搜索</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="sidebar">
+                <h2>歌单</h2>
+                <div id="playlistsContainer"></div>
+            </div>
+
+            <div class="main-content">
+                <h2 id="titleHeader">全部歌曲</h2>
+                <div id="errorMsg"></div>
+                <div class="songs-grid" id="songsGrid">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+
+    <script>
+        const API_BASE = 'https://aie-2025.scauaie.cn/api';
+        let authToken = localStorage.getItem('authToken'); // 你需要替换成实际的 token
+        let allSongs = [];
+        let currentPlaylists = [];
+
+        function getHeaders() {
+            return {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        function clearError() {
+            document.getElementById('errorMsg').innerHTML = '';
+        }
+
+        // 加载歌单
+        async function loadPlaylists() {
+            try {
+                clearError();
+                const response = await axios.get(`${API_BASE}/playlists`, {
+                    headers: getHeaders()
+                });
+
+                currentPlaylists = response.data.data || [];
+                const container = document.getElementById('playlistsContainer');
+                container.innerHTML = '';
+
+                // 添加"全部歌曲"选项
+                const allBtn = document.createElement('div');
+                allBtn.className = 'playlist-item active';
+                allBtn.textContent = '全部歌曲';
+                allBtn.onclick = () => loadAllSongs();
+                container.appendChild(allBtn);
+
+                // 添加歌单
+                currentPlaylists.forEach((playlist) => {
+                    const div = document.createElement('div');
+                    div.className = 'playlist-item';
+                    div.textContent = playlist.name;
+                    div.onclick = () => loadPlaylistSongs(playlist.id, div);
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                showError('加载歌单失败');
+                console.error('加载歌单错误:', error);
+            }
+        }
+
+        // 加载所有歌曲
+        async function loadAllSongs() {
+            try {
+                clearError();
+                document.getElementById('titleHeader').textContent = '全部歌曲';
+
+                const response = await axios.get(`${API_BASE}/songs`, {
+                    headers: getHeaders()
+                });
+
+                allSongs = response.data.data || [];
+                renderSongs(allSongs);
+
+                // 更新歌单高亮
+                document.querySelectorAll('.playlist-item').forEach((item, index) => {
+                    item.classList.toggle('active', index === 0);
+                });
+            } catch (error) {
+                showError('加载歌曲失败');
+                console.error('加载歌曲错误:', error);
+            }
+        }
+
+        // 加载歌单歌曲
+        async function loadPlaylistSongs(playlistId, element) {
+            try {
+                clearError();
+                const response = await axios.get(`${API_BASE}/playlists/${playlistId}`, {
+                    headers: getHeaders()
+                });
+
+                const playlistData = response.data.data;
+                document.getElementById('titleHeader').textContent = playlistData.name;
+
+                allSongs = playlistData.songs || [];
+                renderSongs(allSongs);
+
+                // 更新歌单高亮
+                document.querySelectorAll('.playlist-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                element.classList.add('active');
+            } catch (error) {
+                showError('加载歌单歌曲失败');
+                console.error('加载歌单歌曲错误:', error);
+            }
+        }
+
+        // 渲染歌曲
+        function renderSongs(songs) {
+            const grid = document.getElementById('songsGrid');
+            
+            if (songs.length === 0) {
+                grid.innerHTML = '<div class="loading">暂无歌曲</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            songs.forEach((song) => {
+                const card = document.createElement('div');
+                card.className = 'song-card';
+                card.innerHTML = `
+                    <img src="${song.cover}" alt="${song.title}" onerror="this.src='https://via.placeholder.com/180?text=No+Image'">
+                    <div class="song-info">
+                        <div class="song-title">${song.title}</div>
+                        <div class="song-artist">${song.artist}</div>
+                        <div class="song-album">${song.album}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 搜索歌曲
+        function search() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            if (!keyword) {
+                loadAllSongs();
+                return;
+            }
+
+            const filtered = allSongs.filter(song => 
+                song.title.toLowerCase().includes(keyword.toLowerCase()) ||
+                song.artist.toLowerCase().includes(keyword.toLowerCase()) ||
+                song.album.toLowerCase().includes(keyword.toLowerCase())
+            );
+
+            document.getElementById('titleHeader').textContent = `搜索结果: "${keyword}"`;
+            renderSongs(filtered);
+        }
+
+        // 回车搜索
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    search();
+                }
+            });
+
+            // 初始加载
+            loadPlaylists();
+            loadAllSongs();
+        });
+    </script>
+</body>
+</html>

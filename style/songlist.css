@@ -1,0 +1,108 @@
+.main-c{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap:10vh;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to top, #2f9823, #5ee79c);
+}
+.container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 10%;
+    margin-right: 10%; 
+    width: 80%;
+    height:100%;
+}
+.list-container{
+    margin-bottom: 3%;
+    height: auto;
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.listInfo
+{
+    height: 100%;
+    width: 100%;
+    margin-top: 2%;
+    background-color: rgba(255, 255, 255, 0.483);
+    
+    border-radius: 10px;
+    display: flex;
+    cursor: pointer;
+}
+.listInfo:hover{
+    background-color:rgba(255, 255, 255, 0.747);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+}
+.cover-container
+{
+    width: 18%;
+    height: 89%;
+    margin-top: 1.2%;
+    margin-left: 2%;
+}
+.info{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.cover-container img{
+    display: block;
+    width: 100%;    
+    height: 100%;
+    object-fit: fill;
+}
+.listname
+{
+    font-size: 200%;
+    line-height: 200%;
+    text-align: center;
+    font-weight: bold;
+}
+.Listcover
+{
+    object-fit: cover;
+}
+
+.songs-container {
+    width: 90%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    display: none;
+    
+}
+.songs-container.active {
+    max-height: 100000px;
+    display: block;
+}
+
+.song-container
+{
+    text-align: center;
+    background-color: #f8f9fa;
+    height: 18vh;
+    width: 100%;
+}
+
+.song-cover{
+    width: 15vh;
+    height: 15vh;
+    margin-top: 1.5vh;
+    margin-left: 2vh;
+    float: left;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.song-cover img{
+    object-fit: cover;
+    border-radius: 5px;
+    float: left;
+}

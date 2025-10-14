@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的歌单</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .playlist-item {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .playlist-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+        }
+
+        .playlist-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .playlist-header:hover {
+            background-color: #f8f9fa;
+        }
+
+        .playlist-cover {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .playlist-info {
+            flex: 1;
+        }
+
+        .playlist-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .playlist-description {
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .playlist-meta {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .toggle-icon {
+            font-size: 1.5em;
+            color: #667eea;
+            transition: transform 0.3s ease;
+            margin-left: 20px;
+        }
+
+        .toggle-icon.active {
+            transform: rotate(180deg);
+        }
+
+        .songs-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            background-color: #f8f9fa;
+        }
+
+        .songs-container.active {
+            max-height: 1000px;
+        }
+
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            transition: background-color 0.3s ease;
+        }
+
+        .song-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .song-cover {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+
+        .song-info {
+            flex: 1;
+        }
+
+        .song-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .song-artist {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .song-duration {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .song-loading {
+            padding: 15px 20px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 我的歌单</h1>
+        <div id="app"></div>
+    </div>
+
+    <script>
+        const BaseUrl = 'https://aie-2025.scauaie.cn'; // 根据实际情况修改
+
+        // 格式化时长（秒转分:秒）
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 获取歌单列表
+        async function loadPlaylists() {
+            const app = document.getElementById('app');
+            app.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const response = await axios.get(`${BaseUrl}/api/playlists`,{
+                    headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }});
+                if (response.data.success) {
+                    renderPlaylists(response.data.data);
+                } else {
+                    throw new Error('加载失败');
+                }
+            } catch (error) {
+                app.innerHTML = `<div class="error">❌ 加载歌单失败: ${error.message}</div>`;
+            }
+        }
+
+        // 渲染歌单列表
+        function renderPlaylists(playlists) {
+            const app = document.getElementById('app');
+            app.innerHTML = playlists.map(playlist => `
+                <div class="playlist-item" data-id="${playlist.id}">
+                    <div class="playlist-header" onclick="togglePlaylist(${playlist.id})">
+                        <img src="${playlist.cover}" alt="${playlist.name}" class="playlist-cover">
+                        <div class="playlist-info">
+                            <div class="playlist-name">${playlist.name}</div>
+                            <div class="playlist-description">${playlist.description}</div>
+                            <div class="playlist-meta">
+                                ${playlist.songIds.length} 首歌曲 · 创建于 ${playlist.createdAt}
+                            </div>
+                        </div>
+                        <span class="toggle-icon" id="icon-${playlist.id}">▼</span>
+                    </div>
+                    <div class="songs-container" id="songs-${playlist.id}">
+                        <!-- 歌曲列表将在这里动态加载 -->
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 切换歌单展开/收起
+        const loadedPlaylists = new Set();
+
+        async function togglePlaylist(playlistId) {
+            const songsContainer = document.getElementById(`songs-${playlistId}`);
+            const icon = document.getElementById(`icon-${playlistId}`);
+            const isActive = songsContainer.classList.contains('active');
+
+            if (isActive) {
+                // 收起
+                songsContainer.classList.remove('active');
+                icon.classList.remove('active');
+            } else {
+                // 展开
+                songsContainer.classList.add('active');
+                icon.classList.add('active');
+
+                // 如果还没加载过歌曲，则加载
+                if (!loadedPlaylists.has(playlistId)) {
+                    await loadSongs(playlistId);
+                }
+            }
+        }
+
+        // 加载歌曲列表
+        async function loadSongs(playlistId) {
+            const songsContainer = document.getElementById(`songs-${playlistId}`);
+            songsContainer.innerHTML = '<div class="song-loading">加载歌曲中...</div>';
+
+            try {
+                // 获取歌单数据
+                const playlistResponse = await axios.get(`${BaseUrl}/api/playlists`,{
+                    headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }});
+                const playlist = playlistResponse.data.data.find(p => p.id === playlistId);
+
+                if (!playlist) {
+                    throw new Error('歌单不存在');
+                }
+
+                // 获取所有歌曲信息
+                const songPromises = playlist.songIds.map(songId => 
+                    axios.get(`${BaseUrl}/api/songs/${songId}`,{
+                        headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }})
+                );
+                const songResponses = await Promise.all(songPromises);
+                const songs = songResponses.map(res => res.data);
+
+                // 渲染歌曲列表
+                songsContainer.innerHTML = songs.map(song => `
+                    <div class="song-item">
+                        <img src="${song.cover}" alt="${song.title}" class="song-cover">
+                        <div class="song-info">
+                            <div class="song-title">${song.title}</div>
+                            <div class="song-artist">${song.artist} · ${song.album}</div>
+                        </div>
+                        <div class="song-duration">${formatDuration(song.duration)}</div>
+                    </div>
+                `).join('');
+
+                loadedPlaylists.add(playlistId);
+            } catch (error) {
+                songsContainer.innerHTML = `<div class="song-loading" style="color: #dc3545;">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPlaylists();
+        });
+    </script>
+</body>
+</html>

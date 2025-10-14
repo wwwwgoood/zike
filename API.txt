@@ -1,0 +1,9 @@
+/api/auth/login
+/api/auth/logout
+/api/playlists
+
+Request body
+{
+  "username": "chengmaomao",
+  "password": "5b90f2a17bcce69ac49092ff4ac9ab17c86bdcef8a473233c6a787f0157f207a060f0a9436088438c2025ec4ba76cb21cef8666f083294d1cf395ed0d992ea7d"
+}
