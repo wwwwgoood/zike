@@ -92,9 +92,6 @@
     } */
     //以后收到的数据都是response的data而不是data。data
 
-    const command = new URLSearchParams(window.location.search);
-    const command_id = command.get("id");
-
     let hover_section = document.querySelector('.hover-section');
     let player_track = document.querySelector('.player-track');
     let play_pause = document.querySelector('.play-pause');
@@ -119,13 +116,11 @@
     let songs,
         playlist,
         words;//歌词，只不过是一首歌的歌词
-    let nowindex = 0;
+    let nowindex = 0;//歌曲在歌曲库里面的索引
     let words_index = 0;
     let nowColor;
-
-    if (command_id) {
-        nowindex = command_id - 1;
-    }
+    let nowlistindex=0;
+    let songinlistindex=0;//歌曲在歌单里面的位置
 
     let future_time
 
@@ -134,13 +129,12 @@
 
     async function InitPlayer() {
 
+        await getUrlParams();
         await LoadSongData();//加载歌曲数据
-
         await LoadSongWordsData();//加载歌词数据 
         InitWords();//初始化歌词显示
 
         SetCover(songs);//由于统计像素要图片，所以先加载图片
-
         extractPixels()//统计像素部分
 
         const PauseButton = document.querySelector('.play-pause');
@@ -157,6 +151,41 @@
         play_pre.addEventListener('click', () => { ChangeSong(false) });
         play_next.addEventListener('click', () => { ChangeSong(true) });
     }
+
+    function getUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        nowindex=decodeURIComponent(params.get("songid"));
+        nowlistindex=decodeURIComponent(params.get("listid"));
+
+        return {
+            id: params.get("listid"), // "123"（注意：默认是字符串，需手动转类型）
+            name: decodeURIComponent(params.get("songid")), // "测试数据"（解码）
+        };
+    }
+
+    async function LoadLists() {
+        //歌词加载
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${BaseUrl}/playlists/${nowlistindex}`, {//发送请求
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            lists = response.data.data;
+            console.log('歌词数据：', words);
+        }
+        catch (e) {
+            console.error('加载失败：', e);
+            if (e.response) {
+                console.error('响应错误', e.response.status, e.response.data);
+            } else if (e.request) {
+                console.error('无响应', e.request);
+            }
+        }
+
+    }
+
 
     async function LoadSongWordsData() {
         //歌词加载
@@ -361,18 +390,20 @@
         }
     }
 
-    async function ChangeSong(flag) {
-        if (flag) { nowindex++; }
-        else { nowindex--; }
-        if (nowindex < 0) {
-            nowindex = songs.length - 1;
-        }
-        if (nowindex > songs.length - 1) {
-            nowindex = 0;
+    async function ChangeSong(flag) {//切歌
+        if (flag) { songinlistindex++; }
 
+        else { songinlistindex--; }
+        if (songinlistindex < 0) {
+            songinlistindex = lists.songIds.length - 1;
         }
+        if (songinlistindex > lists.songIds.length - 1) {
+            songinlistindex = 0;
+        }
+
+        nowindex=lists.songIds[songinlistindex];
+
         await LoadSongWordsData();
-        console.log(nowindex);
 
         SetCover(songs);
         extractPixels()
@@ -381,7 +412,7 @@
         song_name.textContent = songs[nowindex].title;
         soner.textContent = songs[nowindex].artist;
 
-        
+
         InitWords();
 
         play_pause.querySelector('.PauseIcon').setAttribute('name', 'play-outline');
@@ -398,69 +429,69 @@
         console.log(`提取像素部分的nowindex：${nowindex}`)
 
         img = document.createElement('img');
-        img.style.display="none";
+        img.style.display = "none";
         img.crossOrigin = "anonymous"; // 关键：添加跨域标记
-        img.src=songs[nowindex].cover;
+        img.src = songs[nowindex].cover;
 
         const colorCount = {};
 
         const imgLoaded = new Promise((resolve, reject) => {
-        img.onload = () => {
-            // 图片加载成功，检查尺寸
-            if (img.naturalWidth === 0 || img.naturalHeight === 0) {
-                reject('图片尺寸无效');
-                return;
-            }
-            resolve(img); // 成功时返回图片对象
-        };
-        img.onerror = () => reject('图片加载失败'); // 失败时 reject
-    });
-
-    try {
-        // 3. 等待图片加载完成（用 await 等待 Promise）
-        await imgLoaded;
-
-        // 4. 图片加载完成后，执行像素提取和颜色统计
-        const ctx = canvas.getContext('2d');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-
-        ctx.filter = 'blur(8px)';
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        const colorCount = {};
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            const a = data[i + 3];
-            // 忽略透明像素（避免干扰）
-            if (a < 50) continue;
-            const similarColors = `${Math.floor(r / 10) * 10},${Math.floor(g / 10) * 10},${Math.floor(b / 10) * 10}`;
-            colorCount[similarColors] = (colorCount[similarColors] || 0) + 1;
-        }
-
-        // 5. 统计出现次数最多的颜色
-        let max = 0;
-        let nowColor = '';
-        Object.entries(colorCount).forEach(([color, count]) => {
-            if (count > max) {
-                max = count;
-                nowColor = color;
-                console.log(`当前颜色：${nowColor}`); // 每次找到新的最大值都会输出
-            }
+            img.onload = () => {
+                // 图片加载成功，检查尺寸
+                if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                    reject('图片尺寸无效');
+                    return;
+                }
+                resolve(img); // 成功时返回图片对象
+            };
+            img.onerror = () => reject('图片加载失败'); // 失败时 reject
         });
 
-        // 6. 设置背景色（注意格式为 rgb(...)）
-        bg.style.backgroundColor = `rgb(${nowColor})`;
+        try {
+            // 3. 等待图片加载完成（用 await 等待 Promise）
+            await imgLoaded;
 
-    } catch (error) {
-        // 处理加载失败或尺寸无效的错误
-        console.error('提取颜色失败：', error);
+            // 4. 图片加载完成后，执行像素提取和颜色统计
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            ctx.filter = 'blur(8px)';
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            const colorCount = {};
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                // 忽略透明像素（避免干扰）
+                if (a < 50) continue;
+                const similarColors = `${Math.floor(r / 10) * 10},${Math.floor(g / 10) * 10},${Math.floor(b / 10) * 10}`;
+                colorCount[similarColors] = (colorCount[similarColors] || 0) + 1;
+            }
+
+            // 5. 统计出现次数最多的颜色
+            let max = 0;
+            let nowColor = '';
+            Object.entries(colorCount).forEach(([color, count]) => {
+                if (count > max) {
+                    max = count;
+                    nowColor = color;
+                    console.log(`当前颜色：${nowColor}`); // 每次找到新的最大值都会输出
+                }
+            });
+
+            // 6. 设置背景色（注意格式为 rgb(...)）
+            bg.style.backgroundColor = `rgb(${nowColor})`;
+
+        } catch (error) {
+            // 处理加载失败或尺寸无效的错误
+            console.error('提取颜色失败：', error);
+        }
     }
-}
 
     window.onload = InitPlayer;
 </script>
