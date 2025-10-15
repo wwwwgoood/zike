@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <title>歌单界面！</title>
+    <title>Document</title>
     <link rel="stylesheet" href="style/songlist.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pubsub-js/1.9.5/pubsub.min.js"></script>
 </head>
 
 <body>
@@ -21,9 +20,6 @@
         </div>
     </div>
     <div class="bg">
-        <div class="color"></div>
-        <div class="color"></div>
-        <div class="color"></div>
         <div class="main-c">
             <div class="container">
 
@@ -31,7 +27,6 @@
         </div>
     </div>
     <script>
-        //DOM
         let main_c = document.querySelector('.main-c');
         let container = document.querySelector('.container');
         let list_container = document.querySelector('.list-container');
@@ -40,24 +35,21 @@
         let songs_item = document.querySelector('.songs-item');
 
         let lists;
-        let nowsong;//用于歌单展开
+        let nowsong;
         let nowlistindex;
-        let songs;//用于所有曲库界面打开
+        let songs;
 
+        
 
-        async function InitSongList() {//初始化
-            await LoadSongData();
+        async function InitSongList() {
             await LoadSongListData();
-            PubSub.subscribe('UpdateList', ShowLists());//给Showlist订阅加载了界面的事件，使之在必要的时候展示
+            await LoadSongData()
             ShowLists();
-            list_item.addEventListener('click', () => ShowLists());
+            list_item.addEventListener('click', ()=>ShowLists());
             songs_item.addEventListener('click', () => ShowAllSongs());
-            console.log(lists);
         };
 
-        async function ShowAllSongs() {
-
-            await LoadSongData()
+        function ShowAllSongs() {
             console.log('123');
             menu_item.forEach(ele => ele.classList.remove('active'));
             songs_item.classList.add('active');
@@ -67,21 +59,18 @@
             songs_container.className = 'songs-container';
             container.appendChild(songs_container);
 
-            if (!document.querySelector('.loading')) {
-                loading = document.createElement('div');
-                loading.className = 'loading';
-                loading.innerText = "正在加载";
-                container.appendChild(loading);
-            }
-
+            loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerText = "正在加载";
+            container.appendChild(loading);
 
             for (i = 0; i < songs.length; i++) {
 
-                let song_container = document.createElement('div');//整个歌曲盒子
+                let song_container = document.createElement('div');
                 song_container.className = 'song-container';
                 songs_container.appendChild(song_container);
 
-                let song_cover = document.createElement('div');//封面
+                let song_cover = document.createElement('div');
                 song_cover.className = 'song-cover';
                 song_container.appendChild(song_cover);
 
@@ -92,7 +81,7 @@
                 song_info.className = 'song-info'
                 song_container.append(song_info);
 
-                let song_name = document.createElement('div');//歌名盒子
+                let song_name = document.createElement('div');//这是用于储存歌名和歌手名字的盒子
                 song_name.className = 'song-name'
                 song_info.append(song_name);
 
@@ -102,14 +91,14 @@
 
                 song_img.src = songs[i].cover;
                 song_container.dataset.songId = songs[i].id;
-                song_container.addEventListener('click', () => JumpToPlayer(song_container.dataset.songId,false));//给歌曲添加点击跳转的事件
-
+                song_container.addEventListener('click', () => JumpToPlayer(song_container.dataset.songId));//给歌曲添加点击跳转的事件
+                
                 song_name.innerText = songs[i].title;
-                songer_name.innerText = songs[i].artist;
+                songer_name.innerText=songs[i].artist;
 
             }
             songs_container.classList.add('active');
-            loading.style.display = 'none';
+            loading.style.display='none';
             document.querySelectorAll('.song-container').forEach(function (s) { s.classList.add('active') });
         }
 
@@ -136,7 +125,6 @@
                     console.error('无响应', e.request);
                 }
             }
-
         }
 
         async function LoadSongListData() {
@@ -150,14 +138,10 @@
             });
             lists = response.data.data;
             console.log(lists);
-            PubSub.publish('UdateList');
         }
 
         function ShowLists() {
-            container.innerHTML = ' ';//清空之前的内容
-            menu_item.forEach(ele => ele.classList.remove('active'));
-            list_item.classList.add('active');
-
+            container.innerHTML=' ';//清空之前的内容
             let nowindex = 0;
             while (nowindex < lists.length) {
                 let newlist = document.createElement('div');//contain->list->listInfo/songs
@@ -178,10 +162,6 @@
                 songs_container.className = 'songs-container';
                 // song_container.style.display = 'none';//初始状态下隐藏歌曲列表
 
-                let loading = document.createElement('div');
-                loading.className = 'loading';
-                songs_container.appendChild(loading);
-
                 listInfo.addEventListener('click', () => SwitchSong(newlist, songs_container));//给list添加点击事件，点击后展开歌曲列表
 
                 let cover_img = document.createElement('img');
@@ -196,50 +176,51 @@
                 let name = document.createElement('div');
                 name.className = 'listname';
                 info.appendChild(name);
-                name.innerText = lists[nowindex].name;//nowindex指的现在的歌单索引
+                name.innerText = lists[nowindex].name;
 
-                let descripition = document.createElement('div');
-                descripition.className = 'list-descripition';
+                let descripition=document.createElement('div');
+                descripition.className='list-descripition';
                 info.appendChild(descripition);
-                descripition.innerText = lists[nowindex].description;
+                descripition.innerText=lists[nowindex].description;
 
                 nowindex++;
+
                 newlist.appendChild(songs_container);
             }
 
         }
 
         function SwitchSong(list, songs_container) {
-            {
-                if (songs_container.classList.contains('active')) {//active仅仅起到标记符的作用，没有实际样式
-                    songs_container.classList.remove('active');
-                    songs_container.style.maxHeight = 0 + 'px';
-                    return;
-                }
-                else {
-                    songs_container.classList.add('active');
-                }
-                nowlistindex = list.id;
-                ShowSongs(songs_container, list.id);
+            if (songs_container.classList.contains('active')) {
+                songs_container.classList.remove('active');
+                return;
             }
+            else {
+                songs_container.classList.add('active');
+            }
+            nowlistindex = list.id;
+            ShowSongs(songs_container, list.id);
         }
 
-        async function ShowSongs(songs_container, nowlistid) {//展示一个歌单列表的歌曲,
+        async function ShowSongs(list, nowlistid) {
 
-            loading = document.querySelector('.loading');
-            loading.classList.add('active');
+            loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerText = "正在加载";
+            list.appendChild(loading);
+
 
             if (nowlistid >= lists.length) {
                 nowlistid = 0;
                 return;
             }
 
-            if (songs_container.childElementCount < lists[nowlistid].songIds.length) {
+            if (list.childElementCount < lists[nowlistid].songIds.length) {
                 for (i = 0; i < lists[nowlistid].songIds.length; i++) {
 
                     let song_container = document.createElement('div');
                     song_container.className = 'song-container';
-                    songs_container.appendChild(song_container);
+                    list.appendChild(song_container);
 
 
                     let song_cover = document.createElement('div');
@@ -263,40 +244,30 @@
 
                     await GetSong(nowlistid, i);
                     song_img.src = nowsong.cover;
-                    song_container.dataset.songId = nowsong.id;//歌曲容器对应歌曲的id
-                    song_container.addEventListener('click', () => JumpToPlayer(song_container.dataset.songId,true));//给歌曲添加点击跳转的事件
+                    song_container.dataset.songId = nowsong.id;
+                    song_container.addEventListener('click', () => JumpToPlayer(song_container.dataset.songId));//给歌曲添加点击跳转的事件
                     song_name.innerText = nowsong.title;
-                    songer_name.innerText = nowsong.artist;
+                    songer_name.innerText=nowsong.artist;
 
-                    songs_container.classList.add('active');
+
+                    list.classList.add('active');
                     // songs_container.style.display = 'block';//显示歌曲列表
                 }
             }
-            const actualHeight = songs_container.scrollHeight + 'px';
-            songs_container.style.maxHeight = actualHeight;//动态设置大小，弄出画出来的效果
-            loading.classList.remove('active');
             document.querySelectorAll('.song-container').forEach(function (s) { s.classList.add('active') });
+            loading.style.display = 'none';
             return true;
         }
 
-        function JumpToPlayer(i, flag) {//跳转到对应的播放页面
+        function JumpToPlayer(i) {
             const params = new URLSearchParams();
-            console.log(lists);
             params.append("songid", songs[i - 1].id - 1);
-            if (flag) {
-                params.append("listid", lists[nowlistindex].id);
-            }
-            else
-            {
-                params.append("listid", undefined);
-            }
-
+            params.append("listid", lists[nowlistindex]);
             window.location.href = `player.html?${params.toString()}`;
 
         }
 
-        async function GetSong(listId, i) //按照第几个list的第几个获取
-        {
+        async function GetSong(listId, i) {
             console.log(listId);
             const BaseUrl = "https://aie-2025.scauaie.cn/api";
             const url = `${BaseUrl}/songs/${lists[listId].songIds[i]}`;
