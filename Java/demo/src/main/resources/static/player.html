@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <link rel="stylesheet" type="text/css" href="style/player.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <title>播放界面</title>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="main">
+
+        <div class="backcolor"></div>
+        <div class="bg"></div>
+        <div class="mask"></div>
+
+        <div class="container">
+            <div class="song-words">
+                <div class="line"></div>
+            </div>
+
+            <div class="player">
+
+                <div class="hover-section">
+                    <div class="song-name">song-name</div>
+                    <div class="soner">soner</div>
+                    <div class="progress">
+                        <div class="now">00:00</div>
+                        <div class="total-bar">
+                            <div class="progress-bar"></div>
+                            <div class="future-bar"></div>
+                            <div class="time-box"></div>
+                        </div>
+                        <div class="end">01:00</div>
+                    </div>
+
+                </div>
+
+
+                <div class="player-content">
+
+                    <div class="cover">
+                        <img src="" alt="封面">
+                    </div>
+
+                    <div class="play-controls">
+                        <div class="control">
+                            <div class="button play-pre"><ion-icon name="play-skip-back-outline"></ion-icon>
+                            </div>
+                        </div>
+                        <div class="control">
+                            <div class="button play-pause"><ion-icon name="play-outline" class="PauseIcon"></ion-icon>
+                            </div>
+                        </div>
+                        <div class="control">
+                            <div class="button play-next"><ion-icon name="play-skip-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+
+<script>
+    //以后收到的数据都是response的data而不是data。data
+
+    // 获取DOM元素
+    let hover_section = document.querySelector('.hover-section');
+    let player_track = document.querySelector('.player-track');
+    let play_pause = document.querySelector('.play-pause');
+    let album_cover = document.querySelector('.album-cover');
+    let cover_img = document.querySelector('.cover img');
+    let progress_box = document.querySelector('.progress');
+    let progress_bar = document.querySelector('.progress-bar');
+    let total_bar = document.querySelector('.total-bar');
+    let now = document.querySelector('.now');
+    let end = document.querySelector('.end');
+    let time_box = document.querySelector('.time-box');
+    let song_name = document.querySelector('.song-name');
+    let soner = document.querySelector('.soner');
+    let play_pre = document.querySelector('.play-pre');
+    let play_next = document.querySelector('.play-next');
+    let bg = document.querySelector('.bg');
+    let cover_container = document.querySelector('.cover');
+    let song_words = document.querySelector('.song-words');
+    let playlist_content = document.querySelector('playlist-content');
+    let audio; // Audio对象，用于播放音乐
+
+    // 定义全局变量
+    const BaseUrl = "https://aie-2025.scauaie.cn/api"; // API基础URL
+    let songs, // 存储所有歌曲信息的数组
+        playlist, // 存储当前歌单信息
+        words; // 存储当前歌曲的歌词
+    let nowindex = 0; // 当前播放歌曲在歌曲库(songs)中的索引
+    let words_index = 0; // 当前高亮歌词的索引
+    let nowColor; // 存储从封面提取出的主色调
+    let nowlistindex = 0; // 当前歌单的ID
+    let songinlistindex = 0; // 当前歌曲在歌单(lists.songIds)中的位置索引
+    const token = localStorage.getItem('authToken'); // 获取认证token
+
+    let future_time; // 用于存储在进度条上悬停时预览的时间
+
+    audio = new Audio(); // 创建一个新的Audio对象
+    audio.loop = false; // 设置歌曲不循环播放
+
+    function getLuminance(r, g, b) {
+        // 使用相对亮度公式
+        const a = [r, g, b].map(v => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    }
+
+    function adjustTextColor(r, g, b) {
+        const luminance = getLuminance(r, g, b);
+        const isDark = luminance < 0.5; // 阈值可以调整，0.5是中间值
+
+        // 获取需要调整的元素
+        const lines = document.querySelectorAll('.line');
+        const songName = document.querySelector('.song-name');
+        const soner = document.querySelector('.soner');
+        const timeElements = document.querySelectorAll('.now, .end');
+
+        if (isDark) {
+            lines.forEach(line => {
+                line.classList.add('text-light');
+                line.classList.remove('text-dark');
+            });
+        } else {
+            // 浅色背景 -> 深色文字
+            lines.forEach(line => {
+                line.classList.add('text-dark');
+                line.classList.remove('text-light');
+            });
+        }
+    }
+
+    // 播放器初始化函数
+    async function InitPlayer() {
+
+        await getUrlParams(); // 从URL获取歌曲ID和歌单ID
+        await LoadSongData(); // 加载所有歌曲的数据
+        await LoadSongWordsData(); // 加载当前歌曲的歌词数据
+        InitWords(); // 初始化歌词显示
+
+        SetCover(songs[nowindex]); // 设置歌曲封面
+        extractPixels(); // 提取封面主色调并设置为背景
+
+        /* InitMenu(); */
+
+        // 绑定事件监听器
+        const PauseButton = document.querySelector('.play-pause');
+        PauseButton.addEventListener('click', SwitchPlay); // 播放/暂停按钮
+
+        audio.src = songs[nowindex].url; // 设置音频源
+        total_bar.addEventListener('click', SetProgress); // 进度条点击事件
+        audio.addEventListener('timeupdate', ChangeTime); // 音频播放时间更新事件
+        total_bar.addEventListener('mousemove', ShowTimeAndUdateos); // 鼠标在进度条上移动事件
+        total_bar.addEventListener('mouseleave', HideTimeBox); // 鼠标离开进度条事件
+        song_name.textContent = songs[nowindex].title; // 设置歌曲名显示
+        soner.textContent = songs[nowindex].artist; // 设置歌手名显示
+
+        play_pre.addEventListener('click', () => { ChangeSong(false) }); // 上一曲按钮
+        play_next.addEventListener('click', () => { ChangeSong(true) }); // 下一曲按钮
+    }
+
+    function InitMenu() {
+        index = 0;
+
+        for (i = 0; i < array.length && index < songs.length; i++) {
+            let mune_item = document.createElement('div');
+            playlist_content.appendChild(mune_item);
+            mune_item.className = 'playlist-item';
+
+            if (nowlistindex == 'undefined') {
+                index = array[i].id - 1;
+            }
+            else {
+                index = array[i] - 1;
+            }
+
+            playlist_content.innerHTML =
+                `
+                    <div class="playlist-item-cover">
+                        <img src="${songs[index].cover}" alt="封面">
+                    </div>
+                    <div class="playlist-item-info">
+                        <div class="playlist-item-name">${songs[index].title}</div>
+                        <div class="playlist-item-artist">${songs[index].artist}</div>
+                    </div>
+                    <div class="playlist-item-duration">${songs[index].duration}</div>
+                `
+            mune_item.dataset.songId = array[i].id;
+        }
+    }
+
+    // 从URL查询参数中获取歌曲ID和歌单ID
+    function getUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        nowindex = decodeURIComponent(params.get("songid")); // 获取并解码歌曲ID
+        nowlistindex = decodeURIComponent(params.get("listid")); // 获取并解码歌单ID
+        nowindex = Number(nowindex)-1;
+
+        // 返回一个包含这些参数的对象（虽然在此代码中未使用返回值）
+        return {
+            id: params.get("listid"),
+            name: decodeURIComponent(params.get("songid")),
+        };
+    }
+
+    // 加载当前歌曲的歌词数据
+    async function LoadSongWordsData() {
+        try {
+            const token = localStorage.getItem('authToken'); // 获取认证token
+            console.log('geci', nowindex - 1);
+            console.log('geci', songs[nowindex - 1]);
+            // 根据当前歌曲ID请求歌词数据
+            const response = await axios.get(`${BaseUrl}/songs/${songs[nowindex].id}/lyrics`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            words = response.data.data; // 存储歌词数据
+            console.log('歌词数据：', words);
+        }
+        catch (e) {
+            // 错误处理
+            console.error('加载失败：', e);
+            if (e.response) {
+                console.error('响应错误', e.response.status, e.response.data);
+            } else if (e.request) {
+                console.error('无响应', e.request);
+            }
+        }
+    }
+
+    // 初始化歌词显示区域
+    function InitWords() {
+        song_words.innerHTML = ' '; // 清空之前的歌词
+        if (!words) {
+            // 如果没有歌词数据，则显示提示信息
+            console.warn('InitWords：歌词数据 words 未定义');
+            song_words.innerHTML = '<div class="line">暂无歌词数据</div>';
+            return;
+        }
+        console.log('初始化歌词显示，歌词内容：', words);
+        // 遍历歌词数组，为每一句歌词创建一个div元素并添加到页面
+        for (j = 0; j < words.content.length; j++) {
+            let word = document.createElement('div');
+            song_words.appendChild(word);
+            word.className = 'line';
+            word.innerText = words.content[j].text;
+        }
+    }
+
+    function HideTimeBox() {
+        time_box.classList.remove('active');
+    }
+
+    // 当鼠标在进度条上移动时，显示时间盒子
+    function ShowTimeAndUdateos(e) {
+        // 计算鼠标相对于进度条的位置
+        let w = e.clientX - total_bar.getBoundingClientRect().left;
+        time_box.style.left = w + 'px';
+        time_box.style.marginLeft = '-20px';
+        time_box.classList.add('active');
+
+        // 算对应时间
+        future_time = (w / total_bar.clientWidth) * audio.duration;
+        let future_min = Math.floor(future_time / 60);
+        let future_sec = Math.floor(future_time - future_min * 60);
+
+        // 格式化时间，保证两位数显示
+        if (future_min < 10) {
+            future_min = '0' + future_min;
+        }
+        if (future_sec < 10) {
+            future_sec = '0' + future_sec;
+        }
+
+        // 更新预览框的文本内容
+        time_box.textContent = future_min + ':' + future_sec;
+    }
+
+    // 切换播放和暂停状态
+    function SwitchPlay() {
+        // 使用setTimeout稍微延迟执行，以获得更好的视觉效果
+        setTimeout(() => {
+            if (audio.paused) { // 如果当前是暂停状态
+                play_pause.querySelector('.PauseIcon').setAttribute('name', 'pause-outline'); // 切换为暂停图标
+                hover_section.classList.add('active'); // 激活信息区域的显示动画
+                cover_container.classList.add('active'); // 激活封面动画
+                cover_img.classList.add('active'); // 激活封面图片动画
+                audio.play(); // 播放音频
+            } else { // 如果当前是播放状态
+                play_pause.querySelector('.PauseIcon').setAttribute('name', 'play-outline'); // 切换为播放图标
+                hover_section.classList.remove('active'); // 移除相关元素的active类，恢复初始状态
+                cover_container.classList.remove('active');
+                cover_img.classList.remove('active');
+                audio.pause(); // 暂停音频
+            }
+        }, 300);
+    }
+
+    // 加载所有歌曲的数据
+    async function LoadSongData() {
+        let addtionurl;
+        let array;
+        if (nowlistindex == 'Allsong') {
+            addtionurl = 'songs'
+        }
+        else {
+            addtionurl = `playlists/${nowlistindex}`;
+        }
+        try {
+            const response = await axios.get(`${BaseUrl}/${addtionurl}`, { // 请求歌曲列表
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            songs = response.data.data; // 存储歌曲数据
+            if (nowlistindex !== 'Allsong') {
+                array = songs;
+                songs = [];
+                for (const id of array.songIds) {
+                    await LoadOneSong(id); // 等待单首歌曲加载完成
+                }
+            }
+            console.log('歌曲数据11111：', songs);
+            return songs;
+
+        } catch (e) {
+            console.error('加载失败：', e);
+            if (e.response) {
+                console.error('响应错误', e.response.status, e.response.data);
+            } else if (e.request) {
+                console.error('无响应', e.request);
+            }
+        }
+    }
+
+    async function LoadOneSong(id) {
+        try {
+            const response = await axios.get(`${BaseUrl}/songs/${id}`, { // 请求歌曲列表
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            songs.push(response.data.data);
+
+        } catch (e) {
+            console.error('加载失败：', e);
+            if (e.response) {
+                console.error('响应错误', e.response.status, e.response.data);
+            } else if (e.request) {
+                console.error('无响应', e.request);
+            }
+        }
+
+    }
+
+    // 设置封面图片
+    function SetCover(song) {
+        cover_img.src = song.cover; // 设置img标签的src为当前歌曲的封面URL
+        cover_img.style.opacity = 1;
+        cover_img.style.height = "100%";
+    }
+
+    // 设置播放进度
+    function SetProgress(e) {
+        w = e.clientX - total_bar.getBoundingClientRect().left;
+        progress_bar.style.width = w + 'px'; // 更新已播放进度条的宽度
+        audio.currentTime = future_time; // 设置音频的当前播放时间
+    }
+
+    // 更新歌词高亮
+    function UpdateLine() {
+        if (!words || !words.content || words.content.length === 0) {
+            return;
+        }
+
+        const lines = document.querySelectorAll('.line');
+        lines.forEach(line => line.classList.remove('active'));
+
+        // 确保歌词索引在有效范围内
+        if (words_index >= words.content.length) {
+            words_index = words.content.length - 1;
+        }
+
+        // 如果音频时间早于当前歌词行的时间，则向前查找正确的歌词行
+        while (words_index > 0 && audio.currentTime < words.content[words_index].time / 1000) {
+            words_index--;
+        }
+
+        // 如果音频时间晚于下一句歌词的时间，则向后查找正确的歌词行
+        while (words_index < words.content.length - 1 && audio.currentTime >= words.content[words_index + 1].time / 1000) {
+            words_index++;
+        }
+
+        if (lines[words_index]) {
+            lines[words_index].classList.add('active'); // 给当前歌词行添加高亮
+        }
+
+        // 居中显示现在歌词
+        const activeLine = document.querySelector('.line.active');
+        if (activeLine) {
+            const containerHeight = song_words.clientHeight;
+            const lineOffsetTop = activeLine.offsetTop;
+            const lineHeight = activeLine.clientHeight;
+
+            const scrollTop = lineOffsetTop - (containerHeight / 2) + (lineHeight / 2);
+            song_words.scrollTo({ top: scrollTop }); // 平滑滚动到指定位置
+        }
+    }
+
+    // 当音频播放时间更新时触发的函数
+    function ChangeTime(e) {
+
+        UpdateLine(); // 更新歌词高亮
+
+        min = Math.floor(audio.currentTime / 60);
+        sec = Math.floor(audio.currentTime - min * 60);
+
+        total_min = Math.floor(audio.duration / 60);
+        total_sec = Math.floor(audio.duration - total_min * 60);
+
+        // 播放进度
+        play_progress = audio.currentTime / audio.duration * 100;
+
+
+        // 格式化时间显示，保证两位数
+        if (min < 10) {
+            min = '0' + min;
+        }
+        if (sec < 10) {
+            sec = '0' + sec;
+        }
+        if (total_min < 10) {
+            total_min = '0' + total_min;
+        }
+        if (total_sec < 10) {
+            total_sec = '0' + total_sec;
+        }
+
+        // 更新页面上的当前播放时间（处理NaN情况）
+        if (isNaN(min) || isNaN(sec)) {
+            now.innerText = '00:00';
+        } else {
+            now.innerText = min + ':' + sec;
+        }
+
+        // 更新页面上的总时长（处理NaN情况）
+        if (isNaN(total_min) || isNaN(total_sec)) {
+            end.innerText = '00:00';
+        } else {
+            end.innerText = total_min + ':' + total_sec;
+        }
+
+        // 更新进度条的宽度
+        progress_bar.style.width = play_progress + '%';
+
+        // 如果歌曲播放完毕
+        if (play_progress == 100) {
+            play_pause.querySelector('.PauseIcon').setAttribute('name', 'play-outline'); // 切换为播放图标
+            progress_bar.style.width = '0px'; // 重置进度条
+            now.innerText = '00:00'; // 重置当前时间显示
+            hover_section.classList.remove('active'); // 隐藏信息区域
+            cover_img.classList.remove('active'); // 恢复封面初始状态
+        }
+    }
+
+    // 切换歌曲（上一曲/下一曲）
+    async function ChangeSong(flag) {
+
+        if (flag) { // true表示下一曲
+            nowindex++;
+        }
+        else { // false表示上一曲
+            nowindex--;
+        }
+
+        // 处理边界情况，实现循环播放
+        if (nowindex < 0) {
+            nowindex = songs.length - 1; // 如果是第一首的上一曲，则跳到最后一首
+        }
+        if (nowindex > songs.length - 1) {
+            nowindex = 0; // 如果是最后一首的下一曲，则跳到第一首
+        }
+
+        // 更新当前歌曲在歌曲库中的索引
+
+        console.log('ChangeSong: nowsongindex =', nowindex);
+
+        await LoadSongWordsData(); // 加载新歌曲的歌词
+
+        SetCover(songs[nowindex]); // 设置新歌曲的封面
+        extractPixels(); // 提取新封面的主色调并更新背景
+
+        audio.src = songs[nowindex].url; // 更新音频源
+        song_name.textContent = songs[nowindex].title; // 更新歌曲名
+        soner.textContent = songs[nowindex].artist; // 更新歌手名
+
+        InitWords(); // 初始化新歌词的显示
+
+        // 重置播放器状态为暂停
+        play_pause.querySelector('.PauseIcon').setAttribute('name', 'play-outline');
+        progress_bar.style.width = '0px';
+        now.innerText = '00:00';
+        hover_section.classList.remove('active');
+        cover_img.classList.remove('active');
+    }
+
+    // 提取封面图片主色调的函数
+    async function extractPixels() {
+        let canvas = document.getElementById('canvas'); // 获取canvas元素
+
+        // 创建一个临时的Image对象来加载封面
+        img = document.createElement('img');
+        img.style.display = "none"; // 隐藏该图片
+        img.crossOrigin = "anonymous"; // 关键：设置跨域属性，否则无法在canvas中处理来自不同域的图片
+        img.src = songs[nowindex].cover; // 设置图片源
+
+        const colorCount = {}; // 用于存储颜色及其出现次数的对象
+
+        // 
+        const imgLoaded = new Promise((resolve, reject) => {
+            img.onload = () => { // 图片加载成功时
+                if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                    reject('图片尺寸无效'); // 如果图片尺寸无效则拒绝
+                    return;
+                }
+                resolve(img); // 成功时返回图片对象
+            };
+            img.onerror = () => reject('图片加载失败'); // 图片加载失败时拒绝
+        });
+
+        try {
+            await imgLoaded;
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            ctx.filter = 'blur(3px)'; // 加模糊
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); // 获取像素数据
+            const data = imageData.data;
+
+            // 遍历像素数据
+            const colorCount = {};
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                if (a < 50) continue; // 忽略透明度较低的像素
+                // 将颜色进行分组（降低精度），以统计相似的颜色
+                const similarColors = `${Math.floor(r / 2) * 2},${Math.floor(g / 2) * 2},${Math.floor(b / 2) * 2}`;
+                colorCount[similarColors] = (colorCount[similarColors] || 0) + 1; // 统计颜色出现次数
+            }
+
+            // 找出出现次数最多的颜色
+            let max = 0;
+            let nowColor = '';
+            Object.entries(colorCount).forEach(([color, count]) => {
+                if (count > max) {
+                    max = count;
+                    nowColor = color;
+                }
+            });
+
+            console.log(nowColor);
+
+            bg.style.backgroundColor = `rgb(${nowColor})`;
+            colorArray = nowColor.split(',');
+            console.log(colorArray);
+            adjustTextColor(colorArray[0], colorArray[1], colorArray[2]);
+
+        } catch (error) {
+
+            console.error('提取颜色失败：', error);
+        }
+    }
+
+    window.onload = InitPlayer;
+</script>

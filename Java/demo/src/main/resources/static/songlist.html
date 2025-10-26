@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>歌单界面！</title>
+    <link rel="stylesheet" href="style/songlist.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pubsub-js/1.9.5/pubsub.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">音乐库</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item songs-item active">曲库</div>
+            <div class="menu-item list-item ">歌单</div>
+
+        </div>
+    </div>
+    <div class="bg">
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="main-c">
+            <div class="container list-content" style="display: none;"></div>
+            <div class="container songs-content"></div>
+        </div>
+        <div class="plus">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle"
+                viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                <path
+                    d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg>
+        </div>
+    </div>
+
+</body>
+
+</html>
+<script>
+    //DOM
+    let main_c = document.querySelector('.main-c');
+    let container = document.querySelector('.container');
+    // 新增两个内容容器
+    let listContent = document.querySelector('.list-content');
+    let songsContent = document.querySelector('.songs-content');
+    let menu_item = document.querySelectorAll('.menu-item');
+    let list_item = document.querySelector('.list-item');
+    let songs_item = document.querySelector('.songs-item');
+
+    let lists;
+    let nowsong;//用于歌单展开
+    let nowlistindex;
+    let songs;//用于所有曲库界面打开
+    // 标记是否已加载过内容，避免重复加载
+    let isListLoaded = false;
+    let isSongsLoaded = false;
+
+    let isDragging = false; // 标记是否正在拖拽
+
+    async function test() {
+        const BaseUrl = "http://localhost:8080";
+        const url = `${BaseUrl}/api/users/songs`;
+
+        const response = await axios.get(url);
+        songs=response.data;
+        console.log(response);
+    }
+
+    async function InitSongList() {//初始化
+        await LoadSongData();
+        // 初始加载歌单内容
+        console.log("现在的songs是");
+        console.log(songs);
+        ShowAllSongs();
+
+        // 绑定切换事件
+        list_item.addEventListener('click', () => {
+            listContent.style.display = 'block';
+            songsContent.style.display = 'none';
+            menu_item.forEach(ele => ele.classList.remove('active'));
+            list_item.classList.add('active');
+            if (!isListLoaded) {
+                ShowLists();
+            }
+        });
+
+        songs_item.addEventListener('click', () => {
+            listContent.style.display = 'none';
+            songsContent.style.display = 'block';
+            menu_item.forEach(ele => ele.classList.remove('active'));
+            songs_item.classList.add('active');
+            if (!isSongsLoaded) {
+                ShowAllSongs();
+            }
+        });
+    };
+
+
+    async function ShowAllSongs() {//显示所有歌曲
+        await LoadSongData();
+        console.log("现在的songs是");
+        console.log(songs);
+        // 已加载过则不再重复生成
+        if (isSongsLoaded) return;
+
+        songsContent.innerHTML = '';//清空内容
+        let songs_container = document.createElement('div');
+        songs_container.className = 'songs-container';
+        songsContent.appendChild(songs_container);
+
+        let loading = document.createElement('div');
+        loading.className = 'loading';
+        loading.innerText = "正在加载";
+        songs_container.appendChild(loading);
+
+        for (let i = 0; i < songs.length; i++) {
+            let song_container = document.createElement('div');//整个歌曲盒子
+            song_container.className = 'song-container';
+            songs_container.appendChild(song_container);
+
+            let song_cover = document.createElement('div');//封面
+            song_cover.className = 'song-cover';
+            song_container.appendChild(song_cover);
+
+            let song_img = document.createElement('img');
+            song_cover.appendChild(song_img);
+
+            let song_info = document.createElement('div');//这是用于储存歌名和歌手名字的盒子
+            song_info.className = 'song-info'
+            song_container.append(song_info);
+
+            let song_name = document.createElement('div');//歌名盒子
+            song_name.className = 'song-name'
+            song_info.append(song_name);
+
+            let songer_name = document.createElement('div');//歌手名字的盒子
+            songer_name.className = 'songer-name'
+            song_info.append(songer_name);
+
+            song_img.src = "res/test/aaa.jpg";
+            song_container.dataset.songId = songs[i].id;//存id，跳转播放用
+            song_container.addEventListener('click', (event) => JumpToPlayer(song_container.dataset.songId, false, event));//给歌曲添加点击跳转的事件
+
+            song_name.innerText = songs[i].title;//设置文本
+            songer_name.innerText = songs[i].artist;
+        }
+
+        loading.style.display = 'none';
+        document.querySelectorAll('.song-container').forEach(s => s.classList.add('active'));
+        isSongsLoaded = true; // 标记为已加载
+    }
+
+    async function LoadSongData() {//加载歌曲数据
+        try {
+            const BaseUrl = "https://aie-2025.scauaie.cn/api";
+            const token = localStorage.getItem('authToken');
+            const response = await axios.get(`${BaseUrl}/songs`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            console.log(`曲库数据`, response)
+            songs = response.data.data;
+            return songs;
+
+        } catch (e) {
+            console.error('加载失败：', e);
+            if (e.response) {
+                console.error('响应错误', e.response.status, e.response.data);
+            } else if (e.request) {
+                console.error('无响应', e.request);
+            }
+        }
+
+    }
+
+    async function LoadSongListData() {
+        const BaseUrl = "https://aie-2025.scauaie.cn/api";
+        const url = `${BaseUrl}/playlists`;
+
+        const response = await axios.get(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        });
+        lists = response.data.data;
+    }
+
+    async function ShowLists() {
+        // 已加载过则不再重复生成
+        if (isListLoaded) return;
+        await LoadSongListData();
+        listContent.innerHTML = '';//清空之前的内容
+
+        let nowindex = 0;
+        while (nowindex < lists.length) {
+            let newlist = document.createElement('div');//contain->list->listInfo/songs
+            newlist.className = 'list-container';
+            newlist.id = nowindex;
+            listContent.appendChild(newlist);
+
+            let listInfo = document.createElement('div');//contain->list->info->cover/info
+            listInfo.className = 'listInfo';
+            newlist.appendChild(listInfo);
+
+
+            let cover_container = document.createElement('div');
+            cover_container.className = 'cover-container';
+            listInfo.appendChild(cover_container);
+
+            let songs_container = document.createElement('div');//contain->songs->song
+            songs_container.className = 'songs-container';
+
+            let loading = document.createElement('div');
+            loading.className = 'loading';
+            songs_container.appendChild(loading);
+            loading.innerText = '正在加载';
+
+            listInfo.addEventListener('click', () => SwitchSong(newlist, songs_container));//给list添加点击事件，点击后展开歌曲列表
+
+            let cover_img = document.createElement('img');
+            cover_img.className = 'Listcover';
+            cover_container.appendChild(cover_img);
+            cover_img.src = lists[nowindex].cover;
+
+            let info = document.createElement('div');//contain->list->listinfo->info->name
+            info.className = 'info';
+            listInfo.appendChild(info);
+
+            let name = document.createElement('div');
+            name.className = 'listname';
+            info.appendChild(name);
+            name.innerText = lists[nowindex].name;//nowindex指的现在的歌单索引
+
+            let descripition = document.createElement('div');
+            descripition.className = 'list-descripition';
+            info.appendChild(descripition);
+            descripition.innerText = lists[nowindex].description;
+
+            nowindex++;
+            newlist.appendChild(songs_container);
+        }
+
+        isListLoaded = true; // 标记为已加载
+    }
+
+    function SwitchSong(list, songs_container) {
+        if (songs_container.classList.contains('active')) {
+            songs_container.classList.remove('active');
+            songs_container.style.maxHeight = 0 + 'px';
+            return;
+        } else {
+            songs_container.classList.add('active');
+        }
+        nowlistindex = list.id;
+        ShowSongs(songs_container, list.id);
+    }
+
+    async function ShowSongs(songs_container, nowlistid) {
+        const loading = songs_container.querySelector('.loading');
+        loading.classList.add('active');
+
+        if (nowlistid >= lists.length) {
+            nowlistid = 0;
+            return;
+        }
+
+        if (songs_container.childElementCount <= 1) { // 只包含loading时才加载
+            for (let i = 0; i < lists[nowlistid].songIds.length; i++) {
+                let song_container = document.createElement('div');
+                song_container.className = 'song-container';
+                songs_container.appendChild(song_container);
+
+                let song_cover = document.createElement('div');
+                song_cover.className = 'song-cover';
+                song_container.appendChild(song_cover);
+
+                let song_img = document.createElement('img');
+                song_cover.appendChild(song_img);
+
+                let song_info = document.createElement('div');
+                song_info.className = 'song-info'
+                song_container.append(song_info);
+
+                let song_name = document.createElement('div');
+                song_name.className = 'song-name'
+                song_info.append(song_name);
+
+                let songer_name = document.createElement('div');
+                songer_name.className = 'songer-name'
+                song_info.append(songer_name);
+
+                await GetSong(nowlistid, i);
+                song_img.src = nowsong.cover;
+                song_container.dataset.songId = nowsong.id;
+                song_container.addEventListener('click', (event) => JumpToPlayer(song_container.dataset.songId, true, event));
+                song_name.innerText = nowsong.title;
+                songer_name.innerText = nowsong.artist;
+            }
+        }
+
+        const actualHeight = songs_container.scrollHeight + 'px';
+        songs_container.style.maxHeight = actualHeight;
+        loading.classList.remove('active');
+        document.querySelectorAll('.song-container').forEach(s => s.classList.add('active'));
+        return true;
+    }
+
+    function JumpToPlayer(i, flag, e) {
+        const params = new URLSearchParams();
+
+        if (isDragging) {
+            e.preventDefault(); // 拖拽后的点击被阻止
+            e.stopPropagation();
+            console.log("被阻止了！")
+            return;
+        }
+
+        if (flag) {
+            params.append("songid", i);
+            params.append("listid", lists[nowlistindex].id);
+        } else {
+            params.append("songid", i);
+            params.append("listid", 'Allsong');
+        }
+
+        window.location.href = `player.html?${params.toString()}`;
+    }
+
+    async function GetSong(listId, i) {
+        const BaseUrl = "https://aie-2025.scauaie.cn/api";
+        const url = `${BaseUrl}/songs/${lists[listId].songIds[i]}`;
+
+        const response = await axios.get(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        })
+        nowsong = response.data.data
+        console.log(response.data);
+    }
+
+    window.onload = InitSongList;
+</script>

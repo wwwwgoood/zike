@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <style>
+        /* chengmaomao MAKEAIENSSGREATAGAIN */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .main {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .main .color {
+            position: absolute;
+            filter: blur(200px);
+        }
+
+        .main .color:nth-child(1) {
+            width: 80%;
+            top: 10%;
+            height: 50%;
+            left: 20%;
+            background: rgb(201, 54, 54);
+        }
+
+        .main .color:nth-child(2) {
+            width: 60%;
+            top: 40%;
+            height: 50%;
+            left: -10%;
+            background: rgb(70, 236, 24);
+        }
+
+        .main .color:nth-child(3) {
+            width: 80%;
+            top: 3%;
+            height: 30%;
+            background: rgb(212, 227, 80);
+        }
+
+        .login {
+            position:  relative;
+            background-color: rgba(232, 232, 232, 0.525);
+            width: 30vw;
+            min-width: 320px;
+            max-width: 500px;
+            height: auto;
+            padding: 40px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            transition: box-shadow 0.3s ease;
+             overflow: hidden;
+        }
+
+        .login:hover {
+            box-shadow: 0 5px 8px rgba(0, 0, 0, 0.261);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            transition: padding 0.5s ease;
+        }
+
+        form:hover {
+            padding: 10% 5%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+            font-size: clamp(24px, 5vw, 32px);
+        }
+
+        input {
+            margin-top: 30px;
+            height: 50px;
+            width: 90%;
+            max-width: 350px;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid white;
+            outline: none;
+            font-size: 16px;
+            color: white;
+        }
+
+        input::placeholder {
+            color: rgb(96, 96, 96);
+            font-size: 16px;
+            font-weight: 900;
+            text-align: center;
+        }
+
+        button {
+            margin-top: 40px;
+            width: 90%;
+            max-width: 350px;
+            height: 50px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgb(48, 119, 211);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: rgb(28, 99, 191);
+            cursor: pointer;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .error {
+            margin-top: 20px;
+            color: red;
+            font-size: 14px;
+            min-height: 20px;
+            text-align: center;
+        }
+
+        .ani {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(89, 229, 166, 0.744);
+            transform: translate(-50%,-50%);
+            border-radius: 40%;
+            z-index: -1;
+        }
+
+        .ani.active {
+            animation: mouse-out;
+        }
+
+        @keyframes mouse-in {
+            from {
+                height: 0%;
+                width: 0%;
+            }
+
+            to {
+                height: 270%;
+                width: 270%;
+            }
+        }
+
+        @keyframes mouse-out {
+            from {
+                height: 270%;
+                width: 270%;
+            }
+
+            to {
+                height: 0%;
+                width: 0%;
+            }
+        }
+
+        /* 平板适配 (768px - 1024px) */
+        @media screen and (max-width: 1024px) and (min-width: 768px) {
+            .login {
+                width: 50vw;
+                padding: 50px 30px;
+            }
+
+            .main .color {
+                filter: blur(150px);
+            }
+        }
+
+        /* 手机适配 (最大 767px) */
+        @media screen and (max-width: 767px) {
+            .login {
+                width: 90vw;
+                max-width: 400px;
+                padding: 30px 20px;
+            }
+
+            h1 {
+                margin-bottom: 30px;
+            }
+
+            input {
+                margin-top: 25px;
+                height: 45px;
+            }
+
+            button {
+                margin-top: 35px;
+                height: 45px;
+            }
+
+            .main .color {
+                filter: blur(120px);
+            }
+
+            .main .color:nth-child(1) {
+                width: 100%;
+                left: 10%;
+            }
+
+            .main .color:nth-child(2) {
+                width: 80%;
+                left: -5%;
+            }
+
+            .main .color:nth-child(3) {
+                width: 100%;
+            }
+        }
+
+        /* 小屏手机适配 (最大 375px) */
+        @media screen and (max-width: 375px) {
+            .login {
+                width: 95vw;
+                padding: 25px 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 25px;
+            }
+
+            input {
+                margin-top: 20px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            input::placeholder {
+                font-size: 14px;
+            }
+
+            button {
+                margin-top: 30px;
+                height: 40px;
+                font-size: 14px;
+            }
+
+            .error {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main">
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="login">
+            <div class="ani"></div>
+            <form onsubmit="handleLogin(event)"><!-- 绑定提交事件 -->
+                <h1>Login</h1>
+                <input type="text" id="user" placeholder="用户名" required>
+                <input type="password" id="pwd" placeholder="密码" required>
+                <button type="submit">登录</button>
+                <div class="error"></div>
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>
+<script>
+    const API_BASE = 'https://aie-2025.scauaie.cn';
+    const loginURL = '/api/auth/login';
+
+    let errorMsg = document.querySelector('.error');
+    errorMsg.style.display = 'none';
+    let ani = document.querySelector('.ani');
+    let login = document.querySelector('.login');
+
+    login.addEventListener('mouseenter', animationIn);
+    login.addEventListener('mouseleave', animationOut);
+
+    function animationIn(e) {
+        ani.style.top = e.offsetY+'px'
+        ani.style.left = e.offsetX + 'px';
+        console.log(`offsetX:${e.offsetX}`);
+        ani.style.animation = 'mouse-in 0.5s ease forwards';
+    }
+    function animationOut(e) {
+       ani.style.top = e.offsetY+'px'
+        ani.style.left = e.offsetX + 'px';
+        console.log(`offsetX:${e.offsetX}`);
+        ani.style.animation = 'mouse-out 0.5s ease forwards';
+    }
+
+    function sha512Encrypt(text) { return CryptoJS.SHA512(text).toString(); }//用第三方库来加密
+    function handleLogin(event) {
+        event.preventDefault();
+        const usename = document.getElementById("user").value;
+        const psw = document.getElementById("pwd").value;
+        const afterEN = sha512Encrypt(psw);
+        R = {
+            "username": usename,
+            "password": afterEN
+        };
+        postRequest(R, '/api/login');
+    }
+
+    async function postRequest(requestText, apiUrl) {//提交请求
+        try {
+            const reponse = await axios.post(`${API_BASE}${loginURL}`, requestText);
+            if (reponse.data.success) {
+                console.log(reponse.data);
+                localStorage.setItem('authToken', reponse.data.data.token);
+                /* setTimeout(() => {
+                    window.location.href = 'songlist.html';
+                }, 1500); */
+                window.location.href = `songlist.html`;
+            }
+            else {
+
+            }
+        } catch (e) {
+            console.error("requrse错误", e);
+            errorMsg.style.display = 'block';//显示错误信息
+            errorMsg.textContent = e.response.data.message;
+        }
+    }
+</script>
+</body>
+
+</html>

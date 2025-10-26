@@ -1,0 +1,493 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    min-height: 100vh;
+    background-repeat: no-repeat;
+}
+
+.plus {
+    position: fixed;
+    left: 93%;
+    top: 86%;
+    width: 5vw;
+    height: 10vh;
+    background-color: #f9f4f4ce;
+    z-index: 99;
+    border-radius: 80%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 2px 6px 10px 0 rgba(0, 0, 0, 0.357);
+}
+
+.plus:hover{
+    box-shadow: 3px 8px 9px 0 rgba(0, 0, 0, 0.491);
+    transform: translateY(-10px);
+}
+
+.plus svg {
+    width: 100%;
+    /* 宽度 = 父元素宽度 */
+    height: 100%;
+    /* 高度 = 父元素高度 */
+    display: block;
+    /* 避免 inline 元素的默认间距 */
+    color: #000000b3;
+    object-fit: cover;
+}
+
+.bg {
+    height: 100%;
+}
+
+.bg .color {
+    position: absolute;
+    filter: blur(200px);
+    z-index: -1;
+}
+
+.bg .color:nth-child(1) {
+    width: 80%;
+    top: 40%;
+    height: 50%;
+    left: 20%;
+    background: rgb(243, 10, 10);
+}
+
+.bg .color:nth-child(2) {
+    width: 60%;
+    top: 40%;
+    height: 50%;
+    left: -10%;
+    background: rgb(70, 236, 24);
+}
+
+.bg .color:nth-child(3) {
+    width: 80%;
+    top: 3%;
+    height: 30%;
+    background: rgb(212, 227, 80);
+}
+
+/* 左侧菜单样式 */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 30px 0;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 0 30px 30px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.sidebar-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2f9823;
+}
+
+.sidebar-menu {
+    flex: 1;
+    padding: 20px 0;
+}
+
+.menu-item {
+    padding: 18px 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.menu-item:hover {
+    background: rgba(47, 152, 35, 0.1);
+    padding-left: 35px;
+}
+
+.menu-item.active {
+    background: rgba(47, 152, 35, 0.15);
+    border-left: 4px solid #2f9823;
+    color: #2f9823;
+    font-weight: bold;
+}
+
+
+.main-c {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10vh;
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 10%;
+    margin-right: 10%;
+    width: 80%;
+    height: auto;
+    overflow: visible;
+}
+
+.list-container {
+
+    margin-left: 8%;
+    height: auto;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.listInfo {
+    height: 13vh;
+    width: 100%;
+    margin-top: 6%;
+    background-color: rgba(255, 255, 255, 0.608);
+    border-radius: 10px;
+    display: flex;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.listInfo:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.302);
+    transform: translateY(-5px);
+}
+
+.cover-container {
+    width: 11%;
+    height: 90%;
+    position: relative;
+    bottom: 24%;
+    left: 3%;
+    border: 5px solid rgb(255, 255, 255);
+    border-radius: 2%;
+    box-shadow: 3px 3px 10px 0 rgb(45, 45, 45);
+}
+
+.cover-container img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+.info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.listname {
+    font-size: 200%;
+    line-height: 200%;
+    text-align: center;
+    font-weight: bold;
+}
+
+.list-descripition {
+    text-align: center;
+    color: #7272729f;
+}
+
+.Listcover {
+    object-fit: cover;
+}
+
+.songs-container {
+    width: 90%;
+    height: auto;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in;
+}
+
+.loading {
+    background-color: #4444446d;
+    text-align: center;
+    opacity: 0.8;
+    border-radius: 12px;
+    height: 2.5vh;
+    display: none;
+}
+
+.loading.active {
+    display: block;
+}
+
+.song-container {
+    margin-top: 2vh;
+    margin-bottom: 2vh;
+    text-align: center;
+    background-color: #4444446d;
+    opacity: 0.8;
+    height: 12vh;
+    width: 100%;
+    display: block;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.7s ease;
+}
+
+
+.song-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 2px 2px 8px rgba(40, 40, 40, 0.692);
+}
+
+.song-cover {
+    width: 10%;
+    height: 80%;
+    margin-top: 1.5vh;
+    margin-left: 2vh;
+    float: left;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.song-cover img {
+    object-fit: cover;
+    border-radius: 5px;
+    width: 100%;
+    height: 100%;
+}
+
+.song-info {
+    flex: 1;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2vh;
+}
+
+.song-name {
+    text-align: center;
+    color: black;
+    font-weight: bold;
+    font-size: 150%;
+}
+
+.songer-name {
+    color: rgba(77, 49, 49, 0.787);
+    text-align: center;
+    font-size: 14px;
+    margin-top: 2%;
+}
+
+/* 平板适配 (768px - 1024px) */
+@media screen and (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-c {
+        margin-left: 200px;
+    }
+
+    .list-container {
+        width: 80%;
+    }
+
+    .listname {
+        font-size: 150%;
+    }
+}
+
+/* 手机适配 (最大宽度 768px) */
+@media screen and (max-width: 768px) {
+
+    /* 侧边栏默认隐藏 */
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+
+    /* 遮罩层 */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    .main-c {
+        margin-left: 0;
+        gap: 5vh;
+    }
+
+    .container {
+        margin-left: 5%;
+        margin-right: 5%;
+        width: 90%;
+    }
+
+    .list-container {
+        width: 100%;
+        margin-bottom: 5%;
+    }
+
+    .listInfo {
+        height: 14vh;
+        flex-direction: row;
+    }
+
+    .cover-container {
+        width: 20%;
+        bottom: 20%;
+        border: 3px solid rgb(74, 77, 74);
+    }
+
+    .listname {
+        font-size: 120%;
+        line-height: 150%;
+    }
+
+    .songs-container {
+        width: 100%;
+    }
+
+    .song-container {
+        height: 16vh;
+        margin-top: 1.5vh;
+        margin-bottom: 1.5vh;
+    }
+
+    .song-cover {
+        width: 12vh;
+        height: 12vh;
+        margin-top: 2vh;
+        margin-left: 1.5vh;
+    }
+
+    .song-info {
+        padding: 1.5vh;
+    }
+
+    .song-name {
+        font-size: 16px;
+    }
+
+    .songer-name {
+        font-size: 12px;
+    }
+
+    .menu-item {
+        padding: 15px 25px;
+        font-size: 15px;
+    }
+
+    .sidebar-title {
+        font-size: 20px;
+    }
+}
+
+/* 小手机适配 (最大宽度 480px) */
+@media screen and (max-width: 480px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .listInfo {
+        height: 12vh;
+    }
+
+    .cover-container {
+        width: 25%;
+        bottom: 18%;
+        border: 2px solid rgb(74, 77, 74);
+    }
+
+    .listname {
+        font-size: 100%;
+        line-height: 130%;
+    }
+
+    .song-container {
+        height: 14vh;
+    }
+
+    .song-cover {
+        width: 10vh;
+        height: 10vh;
+        margin-top: 2vh;
+        margin-left: 1vh;
+    }
+
+    .song-info {
+        padding: 1vh;
+    }
+
+    .song-name {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .songer-name {
+        font-size: 11px;
+    }
+
+    .menu-toggle {
+        top: 15px;
+        left: 15px;
+        padding: 8px 10px;
+    }
+
+    .menu-toggle span {
+        width: 22px;
+        height: 2.5px;
+    }
+
+    .menu-item {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+
+    .sidebar-header {
+        padding: 0 20px 20px;
+    }
+
+    .sidebar-title {
+        font-size: 18px;
+    }
+}
