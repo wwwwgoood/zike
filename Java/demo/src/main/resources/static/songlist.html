@@ -70,9 +70,22 @@
         const url = `${BaseUrl}/api/users/songs`;
 
         const response = await axios.get(url);
-        songs=response.data;
+        songs = response.data;
+        console.log("aaaa");
         console.log(response);
     }
+
+    function getResourceUrl(relativePath) {
+        // 拆分路径（如"res/文件名"拆分为["res", "文件名"]）
+        const parts = relativePath.split('/');
+        if (parts.length < 2) return relativePath;
+
+        // 对文件名部分进行编码（保留目录"res"不编码）
+        const encodedFilename = encodeURIComponent(parts[1]);
+        // 拼接编码后的完整路径
+        return `${parts[0]}/${encodedFilename}`;
+    }
+
 
     async function InitSongList() {//初始化
         await LoadSongData();
@@ -105,7 +118,8 @@
 
 
     async function ShowAllSongs() {//显示所有歌曲
-        await LoadSongData();
+        //await LoadSongData();
+        await test();
         console.log("现在的songs是");
         console.log(songs);
         // 已加载过则不再重复生成
@@ -145,7 +159,7 @@
             songer_name.className = 'songer-name'
             song_info.append(songer_name);
 
-            song_img.src = "res/test/aaa.jpg";
+            song_img.src = getResourceUrl( songs[i].cover);
             song_container.dataset.songId = songs[i].id;//存id，跳转播放用
             song_container.addEventListener('click', (event) => JumpToPlayer(song_container.dataset.songId, false, event));//给歌曲添加点击跳转的事件
 
